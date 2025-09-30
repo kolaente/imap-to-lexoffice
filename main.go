@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,6 +25,13 @@ type Config struct {
 	IMAPPassword string
 	LexofficeKey string
 	PollInterval time.Duration
+}
+
+// IgnorePatterns contains regex patterns for files to ignore during upload
+var IgnorePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`^AGB_`),
+	regexp.MustCompile(`.ics$`),
+	// Add more patterns here as needed
 }
 
 func loadConfig() *Config {
@@ -198,6 +206,12 @@ func processMessage(c *imapclient.Client, uid imap.UID, config *Config) error {
 			filename, _ := h.Filename()
 			log.Printf("  Found attachment: %s", filename)
 
+			// Check if file should be ignored
+			if shouldIgnoreFile(filename) {
+				log.Printf("  Skipping %s (matches ignore pattern)", filename)
+				continue
+			}
+
 			// Read attachment data
 			data, err := io.ReadAll(part.Body)
 			if err != nil {
@@ -225,6 +239,15 @@ func processMessage(c *imapclient.Client, uid imap.UID, config *Config) error {
 	}
 
 	return nil
+}
+
+func shouldIgnoreFile(filename string) bool {
+	for _, pattern := range IgnorePatterns {
+		if pattern.MatchString(filename) {
+			return true
+		}
+	}
+	return false
 }
 
 func uploadToLexoffice(filename string, data []byte, config *Config) error {
