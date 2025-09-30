@@ -31,6 +31,7 @@ type Config struct {
 var IgnorePatterns = []*regexp.Regexp{
 	regexp.MustCompile(`^AGB_`),
 	regexp.MustCompile(`.ics$`),
+	regexp.MustCompile(`^Receipt-`),
 	// Add more patterns here as needed
 }
 
