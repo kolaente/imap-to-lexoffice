@@ -22,9 +22,6 @@ WORKDIR /root/
 # Copy ca-certificates from alpine for HTTPS requests
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Copy timezone data
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-
 # Copy the binary from builder
 COPY --from=builder /app/imap-to-lexoffice .
 
