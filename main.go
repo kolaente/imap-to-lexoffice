@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -51,10 +52,19 @@ func getEnvOrDefault(key, defaultValue string) string {
 }
 
 func main() {
+	runOnce := flag.Bool("once", false, "Run once and exit")
+	flag.Parse()
+
 	config := loadConfig()
 
 	if config.IMAPServer == "" || config.IMAPUser == "" || config.IMAPPassword == "" || config.LexofficeKey == "" {
 		log.Fatal("Missing required environment variables: IMAP_SERVER, IMAP_USER, IMAP_PASSWORD, LEXOFFICE_API_KEY")
+	}
+
+	if *runOnce {
+		log.Println("Running once and exiting...")
+		processMailbox(config)
+		return
 	}
 
 	log.Printf("Starting mail processor. Polling every %v", config.PollInterval)
