@@ -112,28 +112,26 @@ func processMailbox(config *Config) {
 
 	log.Printf("Found %d messages in INBOX", mailbox.NumMessages)
 
-	// Search for all unseen messages
-	criteria := &imap.SearchCriteria{
-		Not: []imap.SearchCriteria{{Flag: []imap.Flag{imap.FlagSeen}}},
+	// Fetch all messages
+	seqSet := imap.SeqSet{}
+	seqSet.AddRange(1, mailbox.NumMessages)
+
+	fetchOptions := &imap.FetchOptions{
+		UID: true,
 	}
 
-	searchData, err := c.Search(criteria, nil).Wait()
+	msgs, err := c.Fetch(seqSet, fetchOptions).Collect()
 	if err != nil {
-		log.Printf("Search failed: %v", err)
+		log.Printf("Failed to fetch messages: %v", err)
 		return
 	}
 
-	if len(searchData.AllUIDs()) == 0 {
-		log.Println("No new messages")
-		return
-	}
+	log.Printf("Processing %d messages from INBOX", len(msgs))
 
-	log.Printf("Found %d new messages", len(searchData.AllUIDs()))
-
-	// Process each new message
-	for _, uid := range searchData.AllUIDs() {
-		if err := processMessage(c, uid, config); err != nil {
-			log.Printf("Failed to process message %d: %v", uid, err)
+	// Process each message
+	for _, msg := range msgs {
+		if err := processMessage(c, msg.UID, config); err != nil {
+			log.Printf("Failed to process message %d: %v", msg.UID, err)
 		}
 	}
 
